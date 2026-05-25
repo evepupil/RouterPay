@@ -19,6 +19,7 @@ export async function createTestDb() {
   await applyMigration(d1, "0004_afdian_mvp.sql");
 
   return {
+    d1: d1 as D1Database,
     db: createDb(d1 as D1Database),
     async dispose() {
       await mf.dispose();

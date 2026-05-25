@@ -27,7 +27,7 @@ app.post("/", async (c) => {
     if (error instanceof ProviderWebhookError) {
       const status = error.code === "provider_not_found" ? 404 : 202;
       if (providerName === "afdian" && error.code === "order_not_found") {
-        return c.json({ ec: 200, em: "" }, 202);
+        return c.json({ ec: 200, em: "" });
       }
       return c.json({ error: { code: error.code, message: error.message } }, status);
     }
