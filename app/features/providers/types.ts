@@ -10,6 +10,7 @@ export type VerifiedProviderEvent = {
   provider: PaymentProviderName;
   eventKey: string;
   providerTradeNo: string;
+  paymentCode?: string;
   raw: unknown;
 };
 
@@ -26,9 +27,14 @@ export type ProviderCreatePaymentResult = CreatePaymentResult & {
   providerTradeNo?: string;
 };
 
+export type ProviderRuntimeConfig = {
+  providerConfig?: Record<string, unknown>;
+  paymentCode?: string;
+};
+
 export interface PaymentProvider {
   name: PaymentProviderName;
-  createPayment(input: CreatePaymentInput): Promise<ProviderCreatePaymentResult>;
+  createPayment(input: CreatePaymentInput & ProviderRuntimeConfig): Promise<ProviderCreatePaymentResult>;
   verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedProviderEvent>;
   normalizeEvent(event: VerifiedProviderEvent): Promise<NormalizedPaymentEvent>;
 }

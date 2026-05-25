@@ -78,7 +78,13 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       enabled: true,
       testMode: true,
       priority: 10,
-      secretRef: "worker-secret:AFDIAN_TOKEN"
+      secretRef: "worker-secret:AFDIAN_TOKEN",
+      configJson: JSON.stringify({
+        paymentUrl: "https://afdian.com/a/your-name",
+        userId: "",
+        apiToken: "",
+        matchMode: "remark_code"
+      })
     })
     .onConflictDoNothing();
 }
@@ -298,6 +304,7 @@ export async function listProviderConfigs(db: ReturnType<typeof createDb>): Prom
     testMode: row.testMode,
     priority: row.priority,
     secretConfigured: Boolean(row.secretRef),
+    config: parseConfig(row.configJson),
     updatedAt: row.updatedAt
   }));
 }
@@ -312,6 +319,7 @@ export async function upsertProviderConfig(
     testMode: boolean;
     priority: number;
     secretRef?: string;
+    config?: Record<string, unknown>;
   }
 ): Promise<ProviderConfigSummary> {
   await ensureDefaultMerchant(db);
@@ -326,6 +334,7 @@ export async function upsertProviderConfig(
         });
 
   if (existing) {
+    const mergedConfig = mergeProviderConfig(parseConfig(existing.configJson), input.config);
     await db
       .update(providerConfigs)
       .set({
@@ -335,6 +344,7 @@ export async function upsertProviderConfig(
         testMode: input.testMode,
         priority: input.priority,
         secretRef: input.secretRef || existing.secretRef,
+        configJson: JSON.stringify(mergedConfig),
         updatedAt: now
       })
       .where(eq(providerConfigs.id, existing.id));
@@ -352,11 +362,28 @@ export async function upsertProviderConfig(
     testMode: input.testMode,
     priority: input.priority,
     secretRef: input.secretRef,
+    configJson: JSON.stringify(input.config ?? {}),
     createdAt: now,
     updatedAt: now
   });
 
   return (await listProviderConfigs(db)).find((provider) => provider.id === id)!;
+}
+
+export async function getProviderConfigByProvider(db: ReturnType<typeof createDb>, provider: PaymentProviderName) {
+  await ensureDefaultMerchant(db);
+  const row = await db.query.providerConfigs.findFirst({
+    where: and(eq(providerConfigs.merchantId, DEFAULT_MERCHANT_ID), eq(providerConfigs.provider, provider))
+  });
+
+  return row
+    ? {
+        id: row.id,
+        provider: row.provider as PaymentProviderName,
+        enabled: row.enabled,
+        config: parseConfig(row.configJson)
+      }
+    : undefined;
 }
 
 export async function listOrders(db: ReturnType<typeof createDb>, limit = 50): Promise<OrderSummary[]> {
@@ -419,4 +446,34 @@ function orderRowToSummary(row: typeof orders.$inferSelect): OrderSummary {
     createdAt: row.createdAt,
     paidAt: row.paidAt ?? undefined
   };
+}
+
+function parseConfig(value: string | null | undefined): Record<string, unknown> {
+  if (!value) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "object" && parsed ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function mergeProviderConfig(existing: Record<string, unknown>, patch: Record<string, unknown> | undefined) {
+  if (!patch) {
+    return existing;
+  }
+
+  const output = { ...existing };
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || value === "") {
+      continue;
+    }
+    output[key] = value;
+  }
+
+  return output;
 }

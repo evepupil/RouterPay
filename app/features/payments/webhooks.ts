@@ -5,10 +5,14 @@ import type { DeliveryFetch } from "@/features/webhooks/delivery";
 import { deliverCallbacks } from "@/features/webhooks/delivery";
 import {
   applyNormalizedPaymentEvent,
+  attachProviderTradeNoToOrder,
   createCallbackDeliveryRecords,
+  findPendingOrderByAmount,
+  findPendingOrderByPaymentCode,
   findOrderByProviderTradeNo,
   recordProviderEvent
 } from "./repository";
+import { getProviderConfigByProvider } from "@/features/admin/repository";
 
 export type ProviderWebhookResult = {
   received: true;
@@ -64,7 +68,28 @@ export async function handleProviderWebhook(
   }
 
   const normalized = await provider.normalizeEvent(verified);
-  const order = await findOrderByProviderTradeNo(db, normalized.provider, normalized.providerTradeNo);
+  let order = normalized.providerTradeNo
+    ? await findOrderByProviderTradeNo(db, normalized.provider, normalized.providerTradeNo)
+    : undefined;
+
+  if (!order && verified.paymentCode) {
+    order = await findPendingOrderByPaymentCode(db, normalized.provider, verified.paymentCode);
+
+    if (order && normalized.providerTradeNo) {
+      await attachProviderTradeNoToOrder(db, order.routerpayOrderId, normalized.providerTradeNo);
+    }
+  }
+
+  if (!order && normalized.amountMinor > 0) {
+    const providerConfig = await getProviderConfigByProvider(db, normalized.provider);
+    if (providerConfig?.config.matchMode === "amount_time_window") {
+      order = await findPendingOrderByAmount(db, normalized.provider, normalized.amountMinor, normalized.currency);
+
+      if (order && normalized.providerTradeNo) {
+        await attachProviderTradeNoToOrder(db, order.routerpayOrderId, normalized.providerTradeNo);
+      }
+    }
+  }
 
   if (!order) {
     throw new ProviderWebhookError("Order not found for provider trade number", "order_not_found");

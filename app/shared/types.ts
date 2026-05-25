@@ -29,6 +29,7 @@ export type ProviderConfigSummary = {
   testMode: boolean;
   priority: number;
   secretConfigured: boolean;
+  config: Record<string, unknown>;
   updatedAt: string;
 };
 

@@ -2,7 +2,7 @@ import type { createDb } from "@/db/client";
 import { callbackDeliveries, orders, paymentEvents } from "@/db/schema";
 import { ensureDefaultMerchant, getMerchantWebhookSecret } from "@/features/admin/repository";
 import { createEasyPaySign } from "@/features/merchants/auth";
-import { getCredentialByPublicKey } from "@/features/merchants/repository";
+import { getCredentialByMerchantId } from "@/features/merchants/repository";
 import { createRouterPayWebhookHeaders } from "./signing";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -77,7 +77,7 @@ export async function deliverCallback(
       body: request.body
     });
     const responseText = await response.text();
-    const delivered = response.ok;
+    const delivered = isDeliverySuccessful(delivery.callbackProtocol, response, responseText);
 
     await db
       .update(callbackDeliveries)
@@ -86,7 +86,7 @@ export async function deliverCallback(
         attempts: nextAttempts,
         lastStatusCode: response.status,
         lastResponseSummary: summarize(responseText),
-        lastError: delivered ? null : `HTTP ${response.status}`,
+        lastError: delivered ? null : deliveryFailureMessage(delivery.callbackProtocol, response, responseText),
         nextRetryAt: delivered ? null : nextRetryAt(nextAttempts),
         updatedAt: now
       })
@@ -184,8 +184,9 @@ async function buildCallbackRequest(input: {
   easypayNotifyKey: string;
 }) {
   if (input.delivery.callbackProtocol === "easypay_notify") {
+    const credential = await getCredentialByMerchantId(input.db, "easypay_key", input.order.merchantId);
     const params = {
-      pid: input.order.merchantId,
+      pid: credential?.publicKey ?? input.order.merchantId,
       trade_no: input.order.routerpayOrderId,
       out_trade_no: input.order.merchantOrderId,
       type: readMetadataValue(input.order.metadataJson, "easypayType") ?? "unknown",
@@ -193,7 +194,6 @@ async function buildCallbackRequest(input: {
       money: (input.order.amountMinor / 100).toFixed(2),
       trade_status: input.paymentEvent.status === "paid" ? "TRADE_SUCCESS" : input.paymentEvent.status
     };
-    const credential = await getCredentialByPublicKey(input.db, "easypay_key", input.order.merchantId);
     const sign = await createEasyPaySign(params, credential?.secretHash ?? input.easypayNotifyKey);
     const body = new URLSearchParams({
       ...params,
@@ -259,4 +259,28 @@ function summarize(value: string, maxLength = MAX_RESPONSE_SUMMARY_LENGTH): stri
 function nextRetryAt(attempts: number): string {
   const delaySeconds = Math.min(60 * 60, 60 * 2 ** Math.max(0, attempts - 1));
   return new Date(Date.now() + delaySeconds * 1000).toISOString();
+}
+
+function isDeliverySuccessful(protocol: string, response: Response, body: string): boolean {
+  if (!response.ok) {
+    return false;
+  }
+
+  if (protocol === "easypay_notify") {
+    return body.trim().toLowerCase() === "success";
+  }
+
+  return true;
+}
+
+function deliveryFailureMessage(protocol: string, response: Response, body: string): string {
+  if (!response.ok) {
+    return `HTTP ${response.status}`;
+  }
+
+  if (protocol === "easypay_notify") {
+    return `Expected success response, got: ${summarize(body, 120) || "empty body"}`;
+  }
+
+  return `HTTP ${response.status}`;
 }

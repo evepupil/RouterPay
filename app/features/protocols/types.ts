@@ -16,6 +16,8 @@ export type CreatePaymentInput = {
 export type CreatePaymentResult = {
   routerpayOrderId: string;
   paymentUrl: string;
+  paymentCode?: string;
+  paymentInstructions?: string;
 };
 
 export type CallbackPayload = {

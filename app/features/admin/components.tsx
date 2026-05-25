@@ -250,11 +250,56 @@ export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
               <input class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="secretRef" placeholder="留空则保留原值" />
             </label>
             <button class="self-end rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">保存</button>
+            {provider.provider === "afdian" ? (
+              <div class="grid gap-3 md:col-span-6 md:grid-cols-[1fr_180px_1fr_180px]">
+                <label class="grid gap-1 text-xs font-semibold text-muted">
+                  爱发电付款链接
+                  <input
+                    class="rounded-md border border-line px-3 py-2 text-sm text-ink"
+                    name="paymentUrl"
+                    value={stringConfig(provider.config, "paymentUrl")}
+                  />
+                </label>
+                <label class="grid gap-1 text-xs font-semibold text-muted">
+                  User ID
+                  <input
+                    class="rounded-md border border-line px-3 py-2 text-sm text-ink"
+                    name="userId"
+                    value={stringConfig(provider.config, "userId")}
+                  />
+                </label>
+                <label class="grid gap-1 text-xs font-semibold text-muted">
+                  API Token
+                  <input
+                    class="rounded-md border border-line px-3 py-2 text-sm text-ink"
+                    name="apiToken"
+                    type="password"
+                    placeholder="留空则保留原值"
+                  />
+                </label>
+                <label class="grid gap-1 text-xs font-semibold text-muted">
+                  匹配模式
+                  <select class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="matchMode">
+                    <option value="remark_code" selected={stringConfig(provider.config, "matchMode") !== "amount_time_window"}>
+                      备注短码
+                    </option>
+                    <option value="amount_time_window" selected={stringConfig(provider.config, "matchMode") === "amount_time_window"}>
+                      金额时间窗
+                    </option>
+                  </select>
+                </label>
+              </div>
+            ) : null}
           </form>
         ))}
       </div>
     </section>
   );
+}
+
+function stringConfig(config: Record<string, unknown>, key: string): string {
+  const value = config[key];
+  return typeof value === "string" ? value : "";
 }
 
 export function OrdersTable(props: { orders: OrderSummary[] }) {

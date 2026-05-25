@@ -14,5 +14,6 @@ export const providerConfigUpsertSchema = z.object({
   enabled: z.boolean(),
   testMode: z.boolean(),
   priority: z.number().int().min(0).max(9999),
-  secretRef: z.string().max(200).optional().or(z.literal(""))
+  secretRef: z.string().max(200).optional().or(z.literal("")),
+  config: z.record(z.unknown()).optional()
 });

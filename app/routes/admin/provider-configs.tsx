@@ -15,7 +15,13 @@ export const POST = createRoute(async (c) => {
     enabled: stringValue(form.enabled) === "true",
     testMode: stringValue(form.testMode) === "true",
     priority: Number.parseInt(stringValue(form.priority) || "100", 10),
-    secretRef: stringValue(form.secretRef)
+    secretRef: stringValue(form.secretRef),
+    config: {
+      paymentUrl: stringValue(form.paymentUrl) || "",
+      userId: stringValue(form.userId) || "",
+      apiToken: stringValue(form.apiToken) || undefined,
+      matchMode: stringValue(form.matchMode) || "remark_code"
+    }
   });
 
   return c.redirect("/admin/provider-configs", 303);

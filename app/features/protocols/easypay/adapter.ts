@@ -31,7 +31,9 @@ export const easypayProtocolAdapter: InboundProtocolAdapter = {
     return Response.json({
       code: 1,
       trade_no: result.routerpayOrderId,
-      payurl: result.paymentUrl
+      payurl: result.paymentUrl,
+      payment_code: result.paymentCode,
+      instruction: result.paymentInstructions
     });
   },
   async formatCallback(): Promise<CallbackPayload> {

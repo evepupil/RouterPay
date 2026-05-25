@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { afdianProvider } from "./adapter";
 
-describe("afdian provider stub", () => {
-  it("returns a stable provider trade number for created payments", async () => {
+describe("afdian provider", () => {
+  it("returns configured payment links and remark instructions", async () => {
     const result = await afdianProvider.createPayment({
       merchantId: "m_default",
       merchantOrderId: "biz_1001",
@@ -10,35 +10,46 @@ describe("afdian provider stub", () => {
       amountMinor: 1000,
       currency: "CNY",
       orderName: "Test order",
-      metadata: {}
+      metadata: {},
+      paymentCode: "RPABC12345",
+      providerConfig: {
+        paymentUrl: "https://afdian.com/a/routerpay"
+      }
     });
 
-    expect(result.providerTradeNo).toBe("afdian_biz_1001");
-    expect(result.paymentUrl).toContain("out_trade_no=biz_1001");
+    expect(result.paymentUrl).toBe("https://afdian.com/a/routerpay");
+    expect(result.paymentCode).toBe("RPABC12345");
+    expect(result.paymentInstructions).toContain("RPABC12345");
   });
 
-  it("normalizes JSON webhook payloads into payment events", async () => {
+  it("normalizes afdian webhook payloads into payment events", async () => {
     const verified = await afdianProvider.verifyWebhook({
-      headers: new Headers({ "x-afdian-event-id": "evt_1001" }),
+      headers: new Headers(),
       rawBody: JSON.stringify({
-        provider_trade_no: "afdian_biz_1001",
-        status: "TRADE_SUCCESS",
-        amount_minor: 1000,
-        currency: "CNY",
-        paid_at: "2026-05-25T12:00:00.000Z"
+        ec: 200,
+        em: "ok",
+        data: {
+          type: "order",
+          order: {
+            out_trade_no: "202605250001",
+            total_amount: "10.00",
+            status: 2,
+            remark: "RouterPay RPABC12345"
+          }
+        }
       })
     });
     const normalized = await afdianProvider.normalizeEvent(verified);
 
-    expect(verified.eventKey).toBe("evt_1001");
-    expect(verified.providerTradeNo).toBe("afdian_biz_1001");
-    expect(normalized).toEqual({
+    expect(verified.eventKey).toBe("202605250001");
+    expect(verified.providerTradeNo).toBe("202605250001");
+    expect(verified.paymentCode).toBe("RPABC12345");
+    expect(normalized).toMatchObject({
       provider: "afdian",
-      providerTradeNo: "afdian_biz_1001",
+      providerTradeNo: "202605250001",
       status: "paid",
       amountMinor: 1000,
-      currency: "CNY",
-      paidAt: "2026-05-25T12:00:00.000Z"
+      currency: "CNY"
     });
   });
 });

@@ -1,5 +1,4 @@
 import { callbackDeliveries, orders, paymentEvents, providerEvents } from "@/db/schema";
-import { updateMerchantSecuritySettings } from "@/features/admin/repository";
 import { createPayment } from "@/features/payments/service";
 import { handleProviderWebhook } from "@/features/payments/webhooks";
 import { createTestDb } from "@/test/d1";
@@ -21,59 +20,63 @@ describe("provider webhook flow", () => {
     const fetchImpl = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
       expect(init?.method).toBe("POST");
       expect(init?.headers).toMatchObject({
-        "content-type": "application/json"
+        "content-type": "application/x-www-form-urlencoded"
       });
-      expect((init?.headers as Record<string, string>)["routerpay-signature"]).toMatch(/^v1=/);
-      expect(String(init?.body)).toContain('"status":"paid"');
+      expect(String(init?.body)).toContain("trade_status=TRADE_SUCCESS");
+      expect(String(init?.body)).toContain("out_trade_no=biz_2001");
 
-      return new Response("accepted", { status: 200 });
+      return new Response("success", { status: 200 });
     });
 
-    await updateMerchantSecuritySettings(
-      testDb.db,
-      {
-        webhookSecret: "merchant-secret-2001"
-      },
-      "encryption-key-2001"
-    );
     const created = await createPayment(testDb.db, {
       merchantId: "m_default",
       merchantOrderId: "biz_2001",
-      inboundProtocol: "routerpay",
+      inboundProtocol: "easypay",
       provider: "afdian",
       amountMinor: 1200,
       currency: "CNY",
       orderName: "Integration order",
       notifyUrl: "https://merchant.example/notify",
       metadata: {
-        planId: "basic"
+        easypayType: "alipay"
       }
     });
+    expect(created.paymentCode).toMatch(/^RP[A-Z0-9]{8}$/);
     const firstResult = await handleProviderWebhook(testDb.db, {
       providerName: "afdian",
-      headers: new Headers({ "x-afdian-event-id": "afdian_evt_2001" }),
+      headers: new Headers(),
       rawBody: JSON.stringify({
-        provider_trade_no: "afdian_biz_2001",
-        status: "TRADE_SUCCESS",
-        amount_minor: 1200,
-        currency: "CNY",
-        paid_at: "2026-05-25T12:00:00.000Z"
+        ec: 200,
+        em: "ok",
+        data: {
+          type: "order",
+          order: {
+            out_trade_no: "afdian_trade_2001",
+            total_amount: "12.00",
+            status: 2,
+            remark: `RouterPay ${created.paymentCode}`
+          }
+        }
       }),
-      fetchImpl,
-      secretEncryptionKey: "encryption-key-2001"
+      fetchImpl
     });
     const repeatedResult = await handleProviderWebhook(testDb.db, {
       providerName: "afdian",
-      headers: new Headers({ "x-afdian-event-id": "afdian_evt_2001" }),
+      headers: new Headers(),
       rawBody: JSON.stringify({
-        provider_trade_no: "afdian_biz_2001",
-        status: "TRADE_SUCCESS",
-        amount_minor: 1200,
-        currency: "CNY",
-        paid_at: "2026-05-25T12:00:00.000Z"
+        ec: 200,
+        em: "ok",
+        data: {
+          type: "order",
+          order: {
+            out_trade_no: "afdian_trade_2001",
+            total_amount: "12.00",
+            status: 2,
+            remark: `RouterPay ${created.paymentCode}`
+          }
+        }
       }),
-      fetchImpl,
-      secretEncryptionKey: "encryption-key-2001"
+      fetchImpl
     });
 
     const [order] = await testDb.db.select().from(orders).where(eq(orders.routerpayOrderId, created.routerpayOrderId));
@@ -92,7 +95,7 @@ describe("provider webhook flow", () => {
       callbackDeliveryCount: 0
     });
     expect(order.status).toBe("paid");
-    expect(order.providerTradeNo).toBe("afdian_biz_2001");
+    expect(order.providerTradeNo).toBe("afdian_trade_2001");
     expect(providerEventRows).toHaveLength(1);
     expect(paymentEventRows).toHaveLength(1);
     expect(deliveryRows).toHaveLength(1);
@@ -100,7 +103,7 @@ describe("provider webhook flow", () => {
       status: "delivered",
       attempts: 1,
       lastStatusCode: 200,
-      lastResponseSummary: "accepted"
+      lastResponseSummary: "success"
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });

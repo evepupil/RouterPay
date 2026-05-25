@@ -6,7 +6,7 @@ import { attachProviderTradeNo, createOrReuseOrder } from "./repository";
 import { getProtocolSettings, listProviderConfigs } from "@/features/admin/repository";
 
 export async function createPayment(db: ReturnType<typeof createDb>, input: CreatePaymentInput): Promise<CreatePaymentResult> {
-  await assertPaymentAllowed(db, input);
+  const providerConfig = await assertPaymentAllowed(db, input);
   const order = await createOrReuseOrder(db, input);
   const provider = getPaymentProvider(((order.provider ?? input.provider) ?? "afdian") as PaymentProviderName);
 
@@ -17,13 +17,17 @@ export async function createPayment(db: ReturnType<typeof createDb>, input: Crea
   const result = await provider.createPayment({
     ...input,
     provider: order.provider as CreatePaymentInput["provider"],
-    merchantOrderId: order.merchantOrderId
+    merchantOrderId: order.merchantOrderId,
+    paymentCode: order.paymentCode ?? undefined,
+    providerConfig: providerConfig?.config
   });
   await attachProviderTradeNo(db, order.routerpayOrderId, result.providerTradeNo);
 
   return {
     routerpayOrderId: order.routerpayOrderId,
-    paymentUrl: result.paymentUrl
+    paymentUrl: result.paymentUrl,
+    paymentCode: result.paymentCode,
+    paymentInstructions: result.paymentInstructions
   };
 }
 
@@ -45,4 +49,6 @@ async function assertPaymentAllowed(db: ReturnType<typeof createDb>, input: Crea
   if (!providerConfig?.enabled) {
     throw new Error("Payment provider is disabled");
   }
+
+  return providerConfig;
 }

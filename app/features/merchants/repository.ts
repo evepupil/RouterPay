@@ -24,3 +24,25 @@ export async function getCredentialByPublicKey(
       }
     : undefined;
 }
+
+export async function getCredentialByMerchantId(
+  db: ReturnType<typeof createDb>,
+  credentialType: MerchantCredential["credentialType"],
+  merchantId: string
+): Promise<MerchantCredential | undefined> {
+  const row = await db.query.merchantApiCredentials.findFirst({
+    where: and(
+      eq(merchantApiCredentials.credentialType, credentialType),
+      eq(merchantApiCredentials.merchantId, merchantId)
+    )
+  });
+
+  return row
+    ? {
+        merchantId: row.merchantId,
+        credentialType: row.credentialType as MerchantCredential["credentialType"],
+        publicKey: row.publicKey,
+        secretHash: row.secretHash
+      }
+    : undefined;
+}

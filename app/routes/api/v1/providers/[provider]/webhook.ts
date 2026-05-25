@@ -18,10 +18,17 @@ app.post("/", async (c) => {
       secretEncryptionKey: c.env.ROUTERPAY_SECRET_ENCRYPTION_KEY
     });
 
+    if (providerName === "afdian") {
+      return c.json({ ec: 200, em: "" });
+    }
+
     return c.json(result);
   } catch (error) {
     if (error instanceof ProviderWebhookError) {
       const status = error.code === "provider_not_found" ? 404 : 202;
+      if (providerName === "afdian" && error.code === "order_not_found") {
+        return c.json({ ec: 200, em: "" }, 202);
+      }
       return c.json({ error: { code: error.code, message: error.message } }, status);
     }
 

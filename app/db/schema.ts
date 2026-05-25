@@ -56,6 +56,7 @@ export const providerConfigs = sqliteTable(
     testMode: integer("test_mode", { mode: "boolean" }).notNull().default(true),
     priority: integer("priority").notNull().default(100),
     secretRef: text("secret_ref"),
+    configJson: text("config_json").notNull().default("{}"),
     createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
     updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP")
   },
@@ -90,6 +91,7 @@ export const orders = sqliteTable(
     inboundProtocol: text("inbound_protocol").notNull(),
     provider: text("provider"),
     providerTradeNo: text("provider_trade_no"),
+    paymentCode: text("payment_code"),
     status: text("status").notNull(),
     amountMinor: integer("amount_minor").notNull(),
     currency: text("currency").notNull(),
