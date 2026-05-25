@@ -21,10 +21,11 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260524.0",
     "@hono/vite-build": "^1.11.1",
     "@hono/vite-dev-server": "^0.26.0",
-    "@cloudflare/workers-types": "^4.20260524.0",
     "@tailwindcss/vite": "^4.1.12",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",

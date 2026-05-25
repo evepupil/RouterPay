@@ -1,9 +1,11 @@
 import { createPayment } from "@/features/payments/service";
 import { easypayProtocolAdapter } from "@/features/protocols/easypay/adapter";
+import { getDb } from "@/db/client";
+import type { AppContext } from "@/types";
 import type { Context } from "hono";
 import { Hono } from "hono";
 
-const app = new Hono();
+const app = new Hono<AppContext>();
 
 app.get("/", async (c) => handleEasyPay(c));
 app.post("/", async (c) => handleEasyPay(c));
@@ -16,7 +18,7 @@ async function handleEasyPay(c: Context) {
     headers: c.req.raw.headers,
     body
   });
-  const result = await createPayment(input);
+  const result = await createPayment(getDb(c), input);
 
   return easypayProtocolAdapter.formatCreatePaymentResult(result);
 }

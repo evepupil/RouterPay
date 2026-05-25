@@ -1,8 +1,10 @@
 import { createPayment } from "@/features/payments/service";
 import { routerpayProtocolAdapter } from "@/features/protocols/routerpay/adapter";
+import { getDb } from "@/db/client";
+import type { AppContext } from "@/types";
 import { Hono } from "hono";
 
-const app = new Hono();
+const app = new Hono<AppContext>();
 
 app.post("/", async (c) => {
   const body = await c.req.json();
@@ -12,7 +14,7 @@ app.post("/", async (c) => {
     headers: c.req.raw.headers,
     body
   });
-  const result = await createPayment(input);
+  const result = await createPayment(getDb(c), input);
 
   return routerpayProtocolAdapter.formatCreatePaymentResult(result);
 });

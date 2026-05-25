@@ -1,13 +1,18 @@
-import { orders, providerConfigs } from "@/shared/mock-data";
+import { getDb } from "@/db/client";
+import { listOrders, listProviderConfigs } from "@/features/admin/repository";
+import type { AppContext } from "@/types";
 import { Hono } from "hono";
 
-const app = new Hono();
+const app = new Hono<AppContext>();
 
-app.get("/", (c) => {
+app.get("/", async (c) => {
+  const db = getDb(c);
+  const [orderRows, providers] = await Promise.all([listOrders(db), listProviderConfigs(db)]);
+
   return c.json({
-    orderCount: orders.length,
-    providerCount: providerConfigs.length,
-    paidOrderCount: orders.filter((order) => order.status === "paid").length
+    orderCount: orderRows.length,
+    providerCount: providers.length,
+    paidOrderCount: orderRows.filter((order) => order.status === "paid").length
   });
 });
 

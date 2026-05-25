@@ -1,11 +1,14 @@
 import { AdminShell, OrdersTable } from "@/features/admin/components";
-import { orders } from "@/shared/mock-data";
+import { getDb } from "@/db/client";
+import { listOrders } from "@/features/admin/repository";
 import { createRoute } from "honox/factory";
 
-export default createRoute((c) => {
+export default createRoute(async (c) => {
+  const orderRows = await listOrders(getDb(c));
+
   return c.render(
     <AdminShell title="订单">
-      <OrdersTable orders={orders} />
+      <OrdersTable orders={orderRows} />
     </AdminShell>,
     { title: "订单" }
   );

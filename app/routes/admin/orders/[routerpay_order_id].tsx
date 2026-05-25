@@ -1,10 +1,12 @@
 import { AdminShell, CallbackTable } from "@/features/admin/components";
-import { callbackDeliveries, orders } from "@/shared/mock-data";
+import { getDb } from "@/db/client";
+import { getOrder, listCallbackDeliveries } from "@/features/admin/repository";
 import { createRoute } from "honox/factory";
 
-export default createRoute((c) => {
-  const orderId = c.req.param("routerpay_order_id");
-  const order = orders.find((item) => item.routerpayOrderId === orderId);
+export default createRoute(async (c) => {
+  const orderId = c.req.param("routerpay_order_id") ?? "";
+  const db = getDb(c);
+  const [order, deliveries] = await Promise.all([getOrder(db, orderId), listCallbackDeliveries(db, orderId)]);
 
   return c.render(
     <AdminShell title="订单详情">
@@ -29,7 +31,7 @@ export default createRoute((c) => {
               </div>
             </dl>
           </section>
-          <CallbackTable deliveries={callbackDeliveries.filter((delivery) => delivery.routerpayOrderId === orderId)} />
+          <CallbackTable deliveries={deliveries} />
         </div>
       ) : (
         <section class="rounded-lg border border-line bg-white p-5 shadow-panel">
