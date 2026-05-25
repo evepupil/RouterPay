@@ -150,6 +150,7 @@ export const callbackDeliveries = sqliteTable("callback_deliveries", {
   status: text("status").notNull(),
   attempts: integer("attempts").notNull().default(0),
   lastStatusCode: integer("last_status_code"),
+  lastResponseSummary: text("last_response_summary"),
   lastError: text("last_error"),
   nextRetryAt: text("next_retry_at"),
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),

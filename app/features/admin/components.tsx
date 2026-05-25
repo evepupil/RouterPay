@@ -199,8 +199,11 @@ export function CallbackTable(props: { deliveries: CallbackDeliverySummary[] }) 
             <th class="px-5 py-3">投递 ID</th>
             <th class="px-5 py-3">订单</th>
             <th class="px-5 py-3">协议</th>
+            <th class="px-5 py-3">目标</th>
             <th class="px-5 py-3">状态</th>
             <th class="px-5 py-3">次数</th>
+            <th class="px-5 py-3">最近响应</th>
+            <th class="px-5 py-3">操作</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-line">
@@ -209,8 +212,30 @@ export function CallbackTable(props: { deliveries: CallbackDeliverySummary[] }) 
               <td class="px-5 py-4 font-medium text-ink">{delivery.id}</td>
               <td class="px-5 py-4">{delivery.routerpayOrderId}</td>
               <td class="px-5 py-4">{delivery.callbackProtocol}</td>
+              <td class="max-w-[280px] truncate px-5 py-4" title={delivery.targetUrl}>
+                {delivery.targetUrl}
+              </td>
               <td class="px-5 py-4">{delivery.status}</td>
               <td class="px-5 py-4">{delivery.attempts}</td>
+              <td class="max-w-[280px] px-5 py-4 text-muted">
+                {delivery.lastStatusCode ? `HTTP ${delivery.lastStatusCode}` : delivery.lastError || "-"}
+                {delivery.lastResponseSummary ? (
+                  <span class="block truncate" title={delivery.lastResponseSummary}>
+                    {delivery.lastResponseSummary}
+                  </span>
+                ) : null}
+              </td>
+              <td class="px-5 py-4">
+                {delivery.status === "pending" || delivery.status === "failed" ? (
+                  <form method="post" action={`/admin/callback-deliveries/${delivery.id}/retry`}>
+                    <button class="rounded-md border border-line px-3 py-1 text-xs font-semibold text-ink hover:bg-panel">
+                      补发
+                    </button>
+                  </form>
+                ) : (
+                  <span class="text-xs text-muted">-</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

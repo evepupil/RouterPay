@@ -1,6 +1,8 @@
 import type { createDb } from "@/db/client";
 import type { PaymentProviderName } from "@/shared/types";
 import { getPaymentProvider } from "@/features/providers/registry";
+import type { DeliveryFetch } from "@/features/webhooks/delivery";
+import { deliverCallbacks } from "@/features/webhooks/delivery";
 import {
   applyNormalizedPaymentEvent,
   createCallbackDeliveryRecords,
@@ -17,6 +19,7 @@ export type ProviderWebhookResult = {
   routerpayOrderId?: string;
   eventId?: string;
   callbackDeliveryCount: number;
+  deliveredCallbackCount?: number;
 };
 
 export class ProviderWebhookError extends Error {
@@ -34,6 +37,9 @@ export async function handleProviderWebhook(
     providerName: PaymentProviderName;
     headers: Headers;
     rawBody: string;
+    fetchImpl?: DeliveryFetch;
+    routerpayWebhookSecret?: string;
+    easypayNotifyKey?: string;
   }
 ): Promise<ProviderWebhookResult> {
   const provider = getPaymentProvider(input.providerName);
@@ -65,6 +71,15 @@ export async function handleProviderWebhook(
 
   const paymentEvent = await applyNormalizedPaymentEvent(db, order, normalized);
   const callbackDeliveries = await createCallbackDeliveryRecords(db, order, paymentEvent);
+  const deliveryResults = await deliverCallbacks(
+    db,
+    callbackDeliveries.map((delivery) => delivery.id),
+    {
+      fetchImpl: input.fetchImpl,
+      routerpayWebhookSecret: input.routerpayWebhookSecret,
+      easypayNotifyKey: input.easypayNotifyKey
+    }
+  );
 
   return {
     received: true,
@@ -74,6 +89,7 @@ export async function handleProviderWebhook(
     providerTradeNo: verified.providerTradeNo,
     routerpayOrderId: order.routerpayOrderId,
     eventId: paymentEvent.eventId,
-    callbackDeliveryCount: callbackDeliveries.length
+    callbackDeliveryCount: callbackDeliveries.length,
+    deliveredCallbackCount: deliveryResults.filter((result) => result.delivered).length
   };
 }

@@ -55,9 +55,11 @@ export type CallbackDeliverySummary = {
   id: string;
   routerpayOrderId: string;
   callbackProtocol: CallbackProtocol;
+  targetUrl: string;
   status: "pending" | "delivered" | "failed";
   attempts: number;
   lastStatusCode?: number;
+  lastResponseSummary?: string;
   lastError?: string;
   nextRetryAt?: string;
 };

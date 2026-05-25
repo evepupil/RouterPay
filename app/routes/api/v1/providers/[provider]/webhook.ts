@@ -14,7 +14,8 @@ app.post("/", async (c) => {
     const result = await handleProviderWebhook(getDb(c), {
       providerName,
       headers: c.req.raw.headers,
-      rawBody
+      rawBody,
+      routerpayWebhookSecret: c.env.ROUTERPAY_WEBHOOK_SECRET
     });
 
     return c.json(result);

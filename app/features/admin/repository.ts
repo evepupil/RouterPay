@@ -178,9 +178,11 @@ export async function listCallbackDeliveries(
     id: row.id,
     routerpayOrderId: row.routerpayOrderId,
     callbackProtocol: row.callbackProtocol as CallbackDeliverySummary["callbackProtocol"],
+    targetUrl: row.targetUrl,
     status: row.status as CallbackDeliverySummary["status"],
     attempts: row.attempts,
     lastStatusCode: row.lastStatusCode ?? undefined,
+    lastResponseSummary: row.lastResponseSummary ?? undefined,
     lastError: row.lastError ?? undefined,
     nextRetryAt: row.nextRetryAt ?? undefined
   }));
