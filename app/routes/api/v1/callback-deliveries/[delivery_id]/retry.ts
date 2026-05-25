@@ -14,7 +14,7 @@ app.post("/", async (c) => {
 
   try {
     const result = await retryCallbackDelivery(getDb(c), deliveryId, {
-      routerpayWebhookSecret: c.env.ROUTERPAY_WEBHOOK_SECRET
+      secretEncryptionKey: c.env.ROUTERPAY_SECRET_ENCRYPTION_KEY
     });
 
     return c.json(result);

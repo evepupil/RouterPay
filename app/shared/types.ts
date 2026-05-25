@@ -39,6 +39,22 @@ export type MerchantCredential = {
   secretHash: string;
 };
 
+export type MerchantSecuritySettings = {
+  merchantId: string;
+  name: string;
+  webhookUrl?: string;
+  webhookSecretConfigured: boolean;
+  routerpayApiKeyConfigured: boolean;
+  easypayPid: string;
+  easypayKeyConfigured: boolean;
+  updatedAt: string;
+};
+
+export type MerchantSecurityUpdateResult = {
+  settings: MerchantSecuritySettings;
+  webhookSecret?: string;
+};
+
 export type OrderSummary = {
   routerpayOrderId: string;
   merchantOrderId: string;

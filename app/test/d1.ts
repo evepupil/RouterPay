@@ -15,6 +15,7 @@ export async function createTestDb() {
 
   await applyMigration(d1, "0001_initial.sql");
   await applyMigration(d1, "0002_callback_delivery_response_summary.sql");
+  await applyMigration(d1, "0003_merchant_secret_and_provider_config.sql");
 
   return {
     db: createDb(d1 as D1Database),

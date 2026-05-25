@@ -1,5 +1,6 @@
 import type {
   CallbackDeliverySummary,
+  MerchantSecuritySettings,
   OrderSummary,
   ProtocolSettings,
   ProviderConfigSummary
@@ -20,6 +21,7 @@ export function AdminShell(props: { title: string; children: unknown }) {
   const navItems = [
     ["总览", "/admin"],
     ["接口开关", "/admin/protocol-settings"],
+    ["商户安全", "/admin/merchant-security"],
     ["支付渠道", "/admin/provider-configs"],
     ["订单", "/admin/orders"],
     ["回调", "/admin/callbacks"],
@@ -51,6 +53,72 @@ export function AdminShell(props: { title: string; children: unknown }) {
         <div class="mx-auto max-w-7xl px-6 py-6">{props.children}</div>
       </main>
     </div>
+  );
+}
+
+export function MerchantSecurityPanel(props: { settings: MerchantSecuritySettings; newApiKey?: string; webhookSecret?: string }) {
+  return (
+    <section class="rounded-lg border border-line bg-white shadow-panel">
+      <div class="border-b border-line px-5 py-4">
+        <h2 class="text-base font-semibold text-ink">商户安全配置</h2>
+      </div>
+      <div class="space-y-5 p-5">
+        {props.newApiKey ? (
+          <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-ink">
+            <p class="font-semibold">新的 RouterPay API Key 只显示一次</p>
+            <code class="mt-2 block break-all rounded bg-white px-3 py-2 text-xs">{props.newApiKey}</code>
+          </div>
+        ) : null}
+        {props.webhookSecret ? (
+          <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-ink">
+            <p class="font-semibold">新的 Webhook Secret 只显示一次</p>
+            <code class="mt-2 block break-all rounded bg-white px-3 py-2 text-xs">{props.webhookSecret}</code>
+          </div>
+        ) : null}
+        <form class="grid gap-4 md:grid-cols-2" method="post" action="/admin/merchant-security">
+          <label class="grid gap-2 text-sm font-medium text-ink">
+            商户名称
+            <input class="rounded-md border border-line px-3 py-2" name="name" value={props.settings.name} />
+          </label>
+          <label class="grid gap-2 text-sm font-medium text-ink">
+            EasyPay PID
+            <input class="rounded-md border border-line px-3 py-2" name="easypayPid" value={props.settings.easypayPid} />
+          </label>
+          <label class="grid gap-2 text-sm font-medium text-ink md:col-span-2">
+            默认 Webhook URL
+            <input
+              class="rounded-md border border-line px-3 py-2"
+              name="webhookUrl"
+              placeholder="https://merchant.example/routerpay/webhook"
+              value={props.settings.webhookUrl ?? ""}
+            />
+          </label>
+          <label class="grid gap-2 text-sm font-medium text-ink">
+            新 Webhook Secret
+            <input class="rounded-md border border-line px-3 py-2" name="webhookSecret" type="password" placeholder="留空则不更新" />
+          </label>
+          <label class="grid gap-2 text-sm font-medium text-ink">
+            新 EasyPay Key
+            <input class="rounded-md border border-line px-3 py-2" name="easypayKey" type="password" placeholder="留空则不更新" />
+          </label>
+          <div class="flex items-center gap-3 md:col-span-2">
+            <button class="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">保存配置</button>
+            <span class="text-sm text-muted">
+              Webhook Secret: {props.settings.webhookSecretConfigured ? "已配置" : "未配置"} · EasyPay Key:{" "}
+              {props.settings.easypayKeyConfigured ? "已配置" : "未配置"}
+            </span>
+          </div>
+        </form>
+        <form method="post" action="/admin/merchant-security/routerpay-api-key/reset">
+          <button class="rounded-md border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-panel">
+            重置 RouterPay API Key
+          </button>
+          <span class="ml-3 text-sm text-muted">
+            当前状态: {props.settings.routerpayApiKeyConfigured ? "已配置" : "未配置"}
+          </span>
+        </form>
+      </div>
+    </section>
   );
 }
 
@@ -115,32 +183,76 @@ export function ProtocolSwitches(props: { settings: ProtocolSettings }) {
 
 export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
   return (
-    <section class="overflow-hidden rounded-lg border border-line bg-white shadow-panel">
+    <section class="rounded-lg border border-line bg-white shadow-panel">
       <div class="border-b border-line px-5 py-4">
         <h2 class="text-base font-semibold text-ink">支付渠道配置</h2>
       </div>
-      <table class="w-full border-collapse text-left text-sm">
-        <thead class="bg-panel text-xs uppercase text-muted">
-          <tr>
-            <th class="px-5 py-3">渠道</th>
-            <th class="px-5 py-3">状态</th>
-            <th class="px-5 py-3">模式</th>
-            <th class="px-5 py-3">优先级</th>
-            <th class="px-5 py-3">密钥</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-line">
-          {props.providers.map((provider) => (
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-left text-sm">
+          <thead class="bg-panel text-xs uppercase text-muted">
             <tr>
-              <td class="px-5 py-4 font-medium text-ink">{provider.displayName}</td>
-              <td class="px-5 py-4">{provider.enabled ? "启用" : "停用"}</td>
-              <td class="px-5 py-4">{provider.testMode ? "测试" : "生产"}</td>
-              <td class="px-5 py-4">{provider.priority}</td>
-              <td class="px-5 py-4">{provider.secretConfigured ? "已配置" : "未配置"}</td>
+              <th class="px-5 py-3">渠道</th>
+              <th class="px-5 py-3">状态</th>
+              <th class="px-5 py-3">模式</th>
+              <th class="px-5 py-3">优先级</th>
+              <th class="px-5 py-3">密钥</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-line">
+            {props.providers.map((provider) => (
+              <tr>
+                <td class="px-5 py-4 font-medium text-ink">{provider.displayName}</td>
+                <td class="px-5 py-4">{provider.enabled ? "启用" : "停用"}</td>
+                <td class="px-5 py-4">{provider.testMode ? "测试" : "生产"}</td>
+                <td class="px-5 py-4">{provider.priority}</td>
+                <td class="px-5 py-4">{provider.secretConfigured ? "已配置" : "未配置"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="space-y-4 border-t border-line p-5">
+        {props.providers.map((provider) => (
+          <form class="grid gap-3 md:grid-cols-[1fr_120px_120px_110px_1fr_auto]" method="post" action={`/admin/provider-configs/${provider.id}`}>
+            <input type="hidden" name="provider" value={provider.provider} />
+            <label class="grid gap-1 text-xs font-semibold text-muted">
+              名称
+              <input class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="displayName" value={provider.displayName} />
+            </label>
+            <label class="grid gap-1 text-xs font-semibold text-muted">
+              启用
+              <select class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="enabled">
+                <option value="true" selected={provider.enabled}>
+                  启用
+                </option>
+                <option value="false" selected={!provider.enabled}>
+                  停用
+                </option>
+              </select>
+            </label>
+            <label class="grid gap-1 text-xs font-semibold text-muted">
+              模式
+              <select class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="testMode">
+                <option value="true" selected={provider.testMode}>
+                  测试
+                </option>
+                <option value="false" selected={!provider.testMode}>
+                  生产
+                </option>
+              </select>
+            </label>
+            <label class="grid gap-1 text-xs font-semibold text-muted">
+              优先级
+              <input class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="priority" type="number" value={provider.priority} />
+            </label>
+            <label class="grid gap-1 text-xs font-semibold text-muted">
+              密钥引用
+              <input class="rounded-md border border-line px-3 py-2 text-sm text-ink" name="secretRef" placeholder="留空则保留原值" />
+            </label>
+            <button class="self-end rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white">保存</button>
+          </form>
+        ))}
+      </div>
     </section>
   );
 }

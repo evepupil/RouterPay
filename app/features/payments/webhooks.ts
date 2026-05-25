@@ -39,6 +39,7 @@ export async function handleProviderWebhook(
     rawBody: string;
     fetchImpl?: DeliveryFetch;
     routerpayWebhookSecret?: string;
+    secretEncryptionKey?: string;
     easypayNotifyKey?: string;
   }
 ): Promise<ProviderWebhookResult> {
@@ -77,6 +78,7 @@ export async function handleProviderWebhook(
     {
       fetchImpl: input.fetchImpl,
       routerpayWebhookSecret: input.routerpayWebhookSecret,
+      secretEncryptionKey: input.secretEncryptionKey,
       easypayNotifyKey: input.easypayNotifyKey
     }
   );

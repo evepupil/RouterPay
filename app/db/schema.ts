@@ -4,6 +4,8 @@ export const merchants = sqliteTable("merchants", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   webhookUrl: text("webhook_url"),
+  webhookSecretHash: text("webhook_secret_hash"),
+  webhookSecretEncrypted: text("webhook_secret_encrypted"),
   status: text("status").notNull().default("active"),
   createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
   updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP")

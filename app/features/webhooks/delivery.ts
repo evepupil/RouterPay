@@ -1,6 +1,6 @@
 import type { createDb } from "@/db/client";
 import { callbackDeliveries, orders, paymentEvents } from "@/db/schema";
-import { ensureDefaultMerchant } from "@/features/admin/repository";
+import { ensureDefaultMerchant, getMerchantWebhookSecret } from "@/features/admin/repository";
 import { createEasyPaySign } from "@/features/merchants/auth";
 import { getCredentialByPublicKey } from "@/features/merchants/repository";
 import { createRouterPayWebhookHeaders } from "./signing";
@@ -28,6 +28,7 @@ export async function deliverCallback(
   options: {
     fetchImpl?: DeliveryFetch;
     routerpayWebhookSecret?: string;
+    secretEncryptionKey?: string;
     easypayNotifyKey?: string;
   } = {}
 ) {
@@ -60,7 +61,8 @@ export async function deliverCallback(
     delivery,
     order,
     paymentEvent,
-    routerpayWebhookSecret: options.routerpayWebhookSecret ?? DEFAULT_ROUTERPAY_WEBHOOK_SECRET,
+    routerpayWebhookSecret: options.routerpayWebhookSecret,
+    secretEncryptionKey: options.secretEncryptionKey,
     easypayNotifyKey: options.easypayNotifyKey ?? DEFAULT_EASYPAY_NOTIFY_KEY
   });
 
@@ -177,7 +179,8 @@ async function buildCallbackRequest(input: {
   delivery: typeof callbackDeliveries.$inferSelect;
   order: typeof orders.$inferSelect;
   paymentEvent: typeof paymentEvents.$inferSelect;
-  routerpayWebhookSecret: string;
+  routerpayWebhookSecret?: string;
+  secretEncryptionKey?: string;
   easypayNotifyKey: string;
 }) {
   if (input.delivery.callbackProtocol === "easypay_notify") {
@@ -220,11 +223,15 @@ async function buildCallbackRequest(input: {
     paid_at: input.order.paidAt,
     metadata: parseMetadata(input.order.metadataJson)
   });
+  const webhookSecret =
+    input.routerpayWebhookSecret ||
+    (await getMerchantWebhookSecret(input.db, input.order.merchantId, input.secretEncryptionKey)) ||
+    DEFAULT_ROUTERPAY_WEBHOOK_SECRET;
 
   return {
     headers: await createRouterPayWebhookHeaders({
       body,
-      secret: input.routerpayWebhookSecret
+      secret: webhookSecret
     }),
     body
   };

@@ -1,4 +1,5 @@
 import { callbackDeliveries, orders, paymentEvents, providerEvents } from "@/db/schema";
+import { updateMerchantSecuritySettings } from "@/features/admin/repository";
 import { createPayment } from "@/features/payments/service";
 import { handleProviderWebhook } from "@/features/payments/webhooks";
 import { createTestDb } from "@/test/d1";
@@ -22,11 +23,19 @@ describe("provider webhook flow", () => {
       expect(init?.headers).toMatchObject({
         "content-type": "application/json"
       });
+      expect((init?.headers as Record<string, string>)["routerpay-signature"]).toMatch(/^v1=/);
       expect(String(init?.body)).toContain('"status":"paid"');
 
       return new Response("accepted", { status: 200 });
     });
 
+    await updateMerchantSecuritySettings(
+      testDb.db,
+      {
+        webhookSecret: "merchant-secret-2001"
+      },
+      "encryption-key-2001"
+    );
     const created = await createPayment(testDb.db, {
       merchantId: "m_default",
       merchantOrderId: "biz_2001",
@@ -51,7 +60,7 @@ describe("provider webhook flow", () => {
         paid_at: "2026-05-25T12:00:00.000Z"
       }),
       fetchImpl,
-      routerpayWebhookSecret: "test_secret"
+      secretEncryptionKey: "encryption-key-2001"
     });
     const repeatedResult = await handleProviderWebhook(testDb.db, {
       providerName: "afdian",
@@ -64,7 +73,7 @@ describe("provider webhook flow", () => {
         paid_at: "2026-05-25T12:00:00.000Z"
       }),
       fetchImpl,
-      routerpayWebhookSecret: "test_secret"
+      secretEncryptionKey: "encryption-key-2001"
     });
 
     const [order] = await testDb.db.select().from(orders).where(eq(orders.routerpayOrderId, created.routerpayOrderId));
