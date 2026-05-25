@@ -32,6 +32,13 @@ export type ProviderConfigSummary = {
   updatedAt: string;
 };
 
+export type MerchantCredential = {
+  merchantId: string;
+  credentialType: "routerpay_api_key" | "easypay_key";
+  publicKey: string;
+  secretHash: string;
+};
+
 export type OrderSummary = {
   routerpayOrderId: string;
   merchantOrderId: string;

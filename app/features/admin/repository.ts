@@ -1,5 +1,13 @@
 import { createDb } from "@/db/client";
-import { callbackDeliveries, merchants, orders, protocolSettings, providerConfigs } from "@/db/schema";
+import {
+  callbackDeliveries,
+  merchantApiCredentials,
+  merchants,
+  orders,
+  protocolSettings,
+  providerConfigs
+} from "@/db/schema";
+import { sha256Hex } from "@/lib/crypto";
 import type {
   CallbackDeliverySummary,
   OrderSummary,
@@ -8,9 +16,12 @@ import type {
   ProviderConfigSummary,
   RouterPayOrderStatus
 } from "@/shared/types";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 export const DEFAULT_MERCHANT_ID = "m_default";
+export const DEV_ROUTERPAY_API_KEY = "rp_dev_key";
+export const DEV_EASYPAY_PID = "m_default";
+export const DEV_EASYPAY_KEY = "easypay_dev_key";
 
 export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
   await db
@@ -34,6 +45,23 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
     })
     .onConflictDoNothing();
 
+  const routerpayApiKeyHash = await sha256Hex(DEV_ROUTERPAY_API_KEY);
+  await ensureCredential(db, {
+      id: "cred_routerpay_default",
+      merchantId: DEFAULT_MERCHANT_ID,
+      credentialType: "routerpay_api_key",
+      publicKey: routerpayApiKeyHash,
+      secretHash: routerpayApiKeyHash
+  });
+
+  await ensureCredential(db, {
+      id: "cred_easypay_default",
+      merchantId: DEFAULT_MERCHANT_ID,
+      credentialType: "easypay_key",
+      publicKey: DEV_EASYPAY_PID,
+      secretHash: DEV_EASYPAY_KEY
+  });
+
   await db
     .insert(providerConfigs)
     .values({
@@ -47,6 +75,19 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       secretRef: "worker-secret:AFDIAN_TOKEN"
     })
     .onConflictDoNothing();
+}
+
+async function ensureCredential(db: ReturnType<typeof createDb>, value: typeof merchantApiCredentials.$inferInsert) {
+  const existing = await db.query.merchantApiCredentials.findFirst({
+    where: and(
+      eq(merchantApiCredentials.credentialType, value.credentialType),
+      eq(merchantApiCredentials.publicKey, value.publicKey)
+    )
+  });
+
+  if (!existing) {
+    await db.insert(merchantApiCredentials).values(value);
+  }
 }
 
 export async function getProtocolSettings(db: ReturnType<typeof createDb>): Promise<ProtocolSettings> {
