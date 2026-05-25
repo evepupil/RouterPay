@@ -28,6 +28,8 @@ export const DEV_EASYPAY_KEY = "easypay_dev_key";
 export const DEV_WEBHOOK_SECRET = "routerpay_dev_webhook_secret";
 
 export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
+  const now = new Date().toISOString();
+
   await db
     .insert(merchants)
     .values({
@@ -36,7 +38,9 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       webhookUrl: "https://example.com/routerpay/webhook",
       webhookSecretHash: await hashSecret(DEV_WEBHOOK_SECRET),
       webhookSecretEncrypted: await encryptSecret(DEV_WEBHOOK_SECRET),
-      status: "active"
+      status: "active",
+      createdAt: now,
+      updatedAt: now
     })
     .onConflictDoNothing();
 
@@ -47,7 +51,8 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       routerpayApiEnabled: true,
       easypayApiEnabled: true,
       routerpayWebhookEnabled: true,
-      easypayNotifyEnabled: true
+      easypayNotifyEnabled: true,
+      updatedAt: now
     })
     .onConflictDoNothing();
 
@@ -57,7 +62,9 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       merchantId: DEFAULT_MERCHANT_ID,
       credentialType: "routerpay_api_key",
       publicKey: routerpayApiKeyHash,
-      secretHash: routerpayApiKeyHash
+      secretHash: routerpayApiKeyHash,
+      createdAt: now,
+      updatedAt: now
   });
 
   await ensureCredential(db, {
@@ -65,7 +72,9 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
       merchantId: DEFAULT_MERCHANT_ID,
       credentialType: "easypay_key",
       publicKey: DEV_EASYPAY_PID,
-      secretHash: DEV_EASYPAY_KEY
+      secretHash: DEV_EASYPAY_KEY,
+      createdAt: now,
+      updatedAt: now
   });
 
   await db
@@ -84,22 +93,15 @@ export async function ensureDefaultMerchant(db: ReturnType<typeof createDb>) {
         userId: "",
         apiToken: "",
         matchMode: "remark_code"
-      })
+      }),
+      createdAt: now,
+      updatedAt: now
     })
     .onConflictDoNothing();
 }
 
 async function ensureCredential(db: ReturnType<typeof createDb>, value: typeof merchantApiCredentials.$inferInsert) {
-  const existing = await db.query.merchantApiCredentials.findFirst({
-    where: and(
-      eq(merchantApiCredentials.credentialType, value.credentialType),
-      eq(merchantApiCredentials.publicKey, value.publicKey)
-    )
-  });
-
-  if (!existing) {
-    await db.insert(merchantApiCredentials).values(value);
-  }
+  await db.insert(merchantApiCredentials).values(value).onConflictDoNothing();
 }
 
 export async function getProtocolSettings(db: ReturnType<typeof createDb>): Promise<ProtocolSettings> {
