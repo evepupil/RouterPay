@@ -1,0 +1,36 @@
+{
+  "name": "routerpay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build --mode client && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest --passWithNoTests",
+    "db:migrate:local": "wrangler d1 migrations apply routerpay --local"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "hono": "^4.10.6",
+    "honox": "^0.1.55",
+    "lucide": "^0.468.0",
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@hono/vite-build": "^1.11.1",
+    "@hono/vite-dev-server": "^0.26.0",
+    "@cloudflare/workers-types": "^4.20260524.0",
+    "@tailwindcss/vite": "^4.1.12",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.18.0"
+  },
+  "packageManager": "pnpm@10.21.0"
+}

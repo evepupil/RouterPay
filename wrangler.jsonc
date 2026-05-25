@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "routerpay",
+  "main": "./dist/index.js",
+  "compatibility_date": "2026-05-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "routerpay",
+      "database_id": "local-routerpay-dev"
+    }
+  ]
+}
