@@ -1,22 +1,31 @@
-import { getPaymentProvider } from "@/features/providers/registry";
+import { getDb } from "@/db/client";
+import { handleProviderWebhook, ProviderWebhookError } from "@/features/payments/webhooks";
 import type { PaymentProviderName } from "@/shared/types";
+import type { AppContext } from "@/types";
 import { Hono } from "hono";
 
-const app = new Hono();
+const app = new Hono<AppContext>();
 
 app.post("/", async (c) => {
   const providerName = c.req.param("provider") as PaymentProviderName;
-  const provider = getPaymentProvider(providerName);
-
-  if (!provider) {
-    return c.json({ error: { code: "provider_not_found", message: "Provider is not configured" } }, 404);
-  }
-
   const rawBody = await c.req.text();
-  const verified = await provider.verifyWebhook({ headers: c.req.raw.headers, rawBody });
-  const event = await provider.normalizeEvent(verified);
 
-  return c.json({ received: true, event });
+  try {
+    const result = await handleProviderWebhook(getDb(c), {
+      providerName,
+      headers: c.req.raw.headers,
+      rawBody
+    });
+
+    return c.json(result);
+  } catch (error) {
+    if (error instanceof ProviderWebhookError) {
+      const status = error.code === "provider_not_found" ? 404 : 202;
+      return c.json({ error: { code: error.code, message: error.message } }, status);
+    }
+
+    throw error;
+  }
 });
 
 export default app;

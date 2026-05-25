@@ -2,7 +2,7 @@ import { getPaymentProvider } from "@/features/providers/registry";
 import type { PaymentProviderName } from "@/shared/types";
 import type { CreatePaymentInput, CreatePaymentResult } from "@/features/protocols/types";
 import type { createDb } from "@/db/client";
-import { createOrReuseOrder } from "./repository";
+import { attachProviderTradeNo, createOrReuseOrder } from "./repository";
 import { getProtocolSettings, listProviderConfigs } from "@/features/admin/repository";
 
 export async function createPayment(db: ReturnType<typeof createDb>, input: CreatePaymentInput): Promise<CreatePaymentResult> {
@@ -19,10 +19,11 @@ export async function createPayment(db: ReturnType<typeof createDb>, input: Crea
     provider: order.provider as CreatePaymentInput["provider"],
     merchantOrderId: order.merchantOrderId
   });
+  await attachProviderTradeNo(db, order.routerpayOrderId, result.providerTradeNo);
 
   return {
-    ...result,
-    routerpayOrderId: order.routerpayOrderId
+    routerpayOrderId: order.routerpayOrderId,
+    paymentUrl: result.paymentUrl
   };
 }
 

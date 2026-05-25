@@ -22,9 +22,13 @@ export type NormalizedPaymentEvent = {
   paidAt?: string;
 };
 
+export type ProviderCreatePaymentResult = CreatePaymentResult & {
+  providerTradeNo?: string;
+};
+
 export interface PaymentProvider {
   name: PaymentProviderName;
-  createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
+  createPayment(input: CreatePaymentInput): Promise<ProviderCreatePaymentResult>;
   verifyWebhook(input: VerifyWebhookInput): Promise<VerifiedProviderEvent>;
   normalizeEvent(event: VerifiedProviderEvent): Promise<NormalizedPaymentEvent>;
 }
