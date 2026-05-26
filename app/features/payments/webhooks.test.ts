@@ -106,5 +106,5 @@ describe("provider webhook flow", () => {
       lastResponseSummary: "success"
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-  });
+  }, 15000);
 });

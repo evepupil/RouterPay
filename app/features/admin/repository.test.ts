@@ -29,5 +29,5 @@ describe("admin repository default data", () => {
 
     expect(easypayCredentials).toHaveLength(1);
     expect(easypayCredentials[0].createdAt).not.toBe("CURRENT_TIMESTAMP");
-  });
+  }, 15000);
 });

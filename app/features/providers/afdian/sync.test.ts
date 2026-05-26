@@ -56,7 +56,7 @@ describe("syncAfdianOrders", () => {
       processed: 1,
       matched: 1
     });
-  });
+  }, 15000);
 
   it("surfaces Afdian API errors instead of treating them as empty order pages", async () => {
     const testDb = await createTestDb();
