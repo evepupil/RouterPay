@@ -14,6 +14,7 @@
     "@hono/zod-validator": "^0.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.10.6",
     "honox": "^0.1.55",
     "lucide": "^0.468.0",

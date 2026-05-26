@@ -1,4 +1,12 @@
-import { AdminShell, CallbackTable } from "@/features/admin/components";
+import {
+  AdminShell,
+  CallbackTable,
+  CopyButton,
+  EmptyState,
+  OrderDetailCard,
+  PaymentTimeline,
+  Section
+} from "@/features/admin/components";
 import { getDb } from "@/db/client";
 import { getOrder, listCallbackDeliveries } from "@/features/admin/repository";
 import { createRoute } from "honox/factory";
@@ -12,30 +20,24 @@ export default createRoute(async (c) => {
     <AdminShell title="订单详情">
       {order ? (
         <div class="space-y-6">
-          <section class="rounded-lg border border-line bg-white p-5 shadow-panel">
-            <h2 class="text-base font-semibold text-ink">{order.routerpayOrderId}</h2>
-            <dl class="mt-4 grid gap-4 text-sm md:grid-cols-3">
-              <div>
-                <dt class="text-muted">商户订单</dt>
-                <dd class="mt-1 font-medium text-ink">{order.merchantOrderId}</dd>
+          <OrderDetailCard order={order} />
+          <div class="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <PaymentTimeline order={order} />
+            <Section title="操作">
+              <div class="space-y-3 p-5">
+                <CopyButton value={order.routerpayOrderId} variant="primary">复制 RouterPay 订单号</CopyButton>
+                <CopyButton value={order.merchantOrderId}>复制商户订单号</CopyButton>
+                <a class="button-secondary w-full justify-center" href="/admin/orders">
+                  返回订单列表
+                </a>
               </div>
-              <div>
-                <dt class="text-muted">状态</dt>
-                <dd class="mt-1 font-medium text-ink">{order.status}</dd>
-              </div>
-              <div>
-                <dt class="text-muted">金额</dt>
-                <dd class="mt-1 font-medium text-ink">
-                  {(order.amountMinor / 100).toFixed(2)} {order.currency}
-                </dd>
-              </div>
-            </dl>
-          </section>
+            </Section>
+          </div>
           <CallbackTable deliveries={deliveries} />
         </div>
       ) : (
-        <section class="rounded-lg border border-line bg-white p-5 shadow-panel">
-          <p class="text-sm text-muted">订单不存在。</p>
+        <section class="panel">
+          <EmptyState title="订单不存在" description="没有找到对应的 RouterPay 订单，可能已被删除或订单号有误。" />
         </section>
       )}
     </AdminShell>,

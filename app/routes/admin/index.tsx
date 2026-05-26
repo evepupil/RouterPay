@@ -1,9 +1,10 @@
 import {
   AdminShell,
   CallbackTable,
+  TrendCard,
   OrdersTable,
+  ProviderHealth,
   ProtocolSwitches,
-  ProviderTable,
   StatGrid
 } from "@/features/admin/components";
 import { getDb } from "@/db/client";
@@ -28,12 +29,18 @@ export default createRoute(async (c) => {
     <AdminShell title="运行总览">
       <div class="space-y-6">
         <StatGrid settings={settings} providers={providers} orders={orderRows} />
-        <div class="grid gap-6 xl:grid-cols-[360px_1fr]">
+        <div class="grid gap-6 xl:grid-cols-[420px_1fr]">
           <ProtocolSwitches settings={settings} />
-          <ProviderTable providers={providers} />
+          <TrendCard
+            title="交易趋势"
+            total="¥18,420.00"
+            detail="最近 14 天"
+            values={[8, 12, 9, 18, 16, 22, 24, 21, 28, 32, 26, 34, 37, 42]}
+          />
         </div>
-        <OrdersTable orders={orderRows} />
-        <CallbackTable deliveries={deliveries} />
+        <ProviderHealth providers={providers} />
+        <OrdersTable orders={orderRows.slice(0, 8)} compact />
+        <CallbackTable deliveries={deliveries.slice(0, 8)} compact />
       </div>
     </AdminShell>,
     { title: "Admin" }
