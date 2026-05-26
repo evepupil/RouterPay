@@ -7,8 +7,10 @@ export default createRoute(async (c) => {
   const providers = await listProviderConfigs(getDb(c));
 
   return c.render(
-    <AdminShell title="支付渠道配置">
-      <ProviderTable providers={providers} />
+    <AdminShell title="支付渠道">
+      <div class="space-y-6">
+        <ProviderTable providers={providers} />
+      </div>
     </AdminShell>,
     { title: "支付渠道配置" }
   );
