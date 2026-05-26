@@ -140,23 +140,23 @@ export function AdminShell(props: { title: string; description?: string; childre
 
 export function MerchantSecurityPanel(props: { settings: MerchantSecuritySettings; newApiKey?: string; webhookSecret?: string }) {
   return (
-    <Section title="??????">
+    <Section title="商户安全配置">
       <div class="space-y-5 p-5">
         {props.newApiKey ? (
           <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-ink">
-            <p class="font-semibold">?? RouterPay API Key ?????</p>
+            <p class="font-semibold">新的 RouterPay API Key 只显示一次</p>
             <code class="mt-2 block break-all rounded bg-white px-3 py-2 text-xs">{props.newApiKey}</code>
           </div>
         ) : null}
         {props.webhookSecret ? (
           <div class="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-ink">
-            <p class="font-semibold">?? Webhook Secret ?????</p>
+            <p class="font-semibold">新的 Webhook Secret 只显示一次</p>
             <code class="mt-2 block break-all rounded bg-white px-3 py-2 text-xs">{props.webhookSecret}</code>
           </div>
         ) : null}
         <form class="grid gap-4 md:grid-cols-2" method="post" action="/admin/merchant-security">
           <label class="grid gap-2 text-sm font-medium text-ink">
-            ????
+            商户名称
             <input class="input-field" name="name" value={props.settings.name} />
           </label>
           <label class="grid gap-2 text-sm font-medium text-ink">
@@ -164,7 +164,7 @@ export function MerchantSecurityPanel(props: { settings: MerchantSecuritySetting
             <input class="input-field" name="easypayPid" value={props.settings.easypayPid} />
           </label>
           <label class="grid gap-2 text-sm font-medium text-ink md:col-span-2">
-            ?? Webhook URL
+            默认 Webhook URL
             <input
               class="input-field"
               name="webhookUrl"
@@ -173,27 +173,27 @@ export function MerchantSecurityPanel(props: { settings: MerchantSecuritySetting
             />
           </label>
           <label class="grid gap-2 text-sm font-medium text-ink">
-            ? Webhook Secret
-            <input class="input-field" name="webhookSecret" type="password" placeholder="??????" />
+            新 Webhook Secret
+            <input class="input-field" name="webhookSecret" type="password" placeholder="留空则不更新" />
           </label>
           <label class="grid gap-2 text-sm font-medium text-ink">
-            ? EasyPay Key
-            <input class="input-field" name="easypayKey" type="password" placeholder="??????" />
+            新 EasyPay Key
+            <input class="input-field" name="easypayKey" type="password" placeholder="留空则不更新" />
           </label>
           <div class="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-center">
-            <button class="button-primary" type="submit">????</button>
+            <button class="button-primary" type="submit">保存配置</button>
             <span class="text-sm text-muted">
-              Webhook Secret: {props.settings.webhookSecretConfigured ? "???" : "???"} ? EasyPay Key:{" "}
-              {props.settings.easypayKeyConfigured ? "???" : "???"}
+              Webhook Secret: {props.settings.webhookSecretConfigured ? "已配置" : "未配置"} · EasyPay Key:{" "}
+              {props.settings.easypayKeyConfigured ? "已配置" : "未配置"}
             </span>
           </div>
         </form>
         <form method="post" action="/admin/merchant-security/routerpay-api-key/reset">
           <button class="button-secondary" type="submit">
-            ?? RouterPay API Key
+            重置 RouterPay API Key
           </button>
           <span class="ml-3 text-sm text-muted">
-            ????: {props.settings.routerpayApiKeyConfigured ? "???" : "???"}
+            当前状态: {props.settings.routerpayApiKeyConfigured ? "已配置" : "未配置"}
           </span>
         </form>
       </div>
@@ -323,17 +323,17 @@ export function ProtocolSwitches(props: { settings: ProtocolSettings; detailed?:
 
 export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
   return (
-    <Section title="??????">
+    <Section title="支付渠道配置">
       <div class="overflow-x-auto">
         <table class="data-table">
           <thead>
             <tr>
-              <th>??</th>
-              <th>??</th>
-              <th>??</th>
-              <th>???</th>
-              <th>??</th>
-              <th>????</th>
+              <th>渠道</th>
+              <th>状态</th>
+              <th>模式</th>
+              <th>优先级</th>
+              <th>密钥</th>
+              <th>更新时间</th>
             </tr>
           </thead>
           <tbody>
@@ -349,13 +349,13 @@ export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
                   </div>
                 </td>
                 <td>
-                  <Badge tone={provider.enabled ? "success" : "neutral"}>{provider.enabled ? "??" : "??"}</Badge>
+                  <Badge tone={provider.enabled ? "success" : "neutral"}>{provider.enabled ? "启用" : "停用"}</Badge>
                 </td>
-                <td>{provider.testMode ? "????" : "????"}</td>
+                <td>{provider.testMode ? "测试环境" : "生产环境"}</td>
                 <td>{provider.priority}</td>
                 <td>
                   <Badge tone={provider.secretConfigured ? "info" : "warning"}>
-                    {provider.secretConfigured ? "???" : "???"}
+                    {provider.secretConfigured ? "已配置" : "未配置"}
                   </Badge>
                 </td>
                 <td>{formatDate(provider.updatedAt)}</td>
@@ -369,36 +369,36 @@ export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
           <form class="grid gap-3 md:grid-cols-[1fr_120px_120px_110px_1fr_auto]" method="post" action={`/admin/provider-configs/${provider.id}`}>
             <input type="hidden" name="provider" value={provider.provider} />
             <label class="grid gap-1 text-xs font-semibold text-muted">
-              ??
+              名称
               <input class="input-field" name="displayName" value={provider.displayName} />
             </label>
             <label class="grid gap-1 text-xs font-semibold text-muted">
-              ??
+              启用
               <select class="input-field" name="enabled">
-                <option value="true" selected={provider.enabled}>??</option>
-                <option value="false" selected={!provider.enabled}>??</option>
+                <option value="true" selected={provider.enabled}>启用</option>
+                <option value="false" selected={!provider.enabled}>停用</option>
               </select>
             </label>
             <label class="grid gap-1 text-xs font-semibold text-muted">
-              ??
+              模式
               <select class="input-field" name="testMode">
-                <option value="true" selected={provider.testMode}>??</option>
-                <option value="false" selected={!provider.testMode}>??</option>
+                <option value="true" selected={provider.testMode}>测试</option>
+                <option value="false" selected={!provider.testMode}>生产</option>
               </select>
             </label>
             <label class="grid gap-1 text-xs font-semibold text-muted">
-              ???
+              优先级
               <input class="input-field" name="priority" type="number" value={provider.priority} />
             </label>
             <label class="grid gap-1 text-xs font-semibold text-muted">
-              ????
-              <input class="input-field" name="secretRef" placeholder="???????" />
+              密钥引用
+              <input class="input-field" name="secretRef" placeholder="留空则保留原值" />
             </label>
-            <button class="button-primary self-end" type="submit">??</button>
+            <button class="button-primary self-end" type="submit">保存</button>
             {provider.provider === "afdian" ? (
               <div class="grid gap-3 md:col-span-6 md:grid-cols-[1fr_180px_1fr_180px]">
                 <label class="grid gap-1 text-xs font-semibold text-muted">
-                  ???????
+                  爱发电付款链接
                   <input class="input-field" name="paymentUrl" value={stringConfig(provider.config, "paymentUrl")} />
                 </label>
                 <label class="grid gap-1 text-xs font-semibold text-muted">
@@ -407,13 +407,13 @@ export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
                 </label>
                 <label class="grid gap-1 text-xs font-semibold text-muted">
                   API Token
-                  <input class="input-field" name="apiToken" type="password" placeholder="???????" />
+                  <input class="input-field" name="apiToken" type="password" placeholder="留空则保留原值" />
                 </label>
                 <label class="grid gap-1 text-xs font-semibold text-muted">
-                  ????
+                  匹配模式
                   <select class="input-field" name="matchMode">
-                    <option value="remark_code" selected={stringConfig(provider.config, "matchMode") !== "amount_time_window"}>????</option>
-                    <option value="amount_time_window" selected={stringConfig(provider.config, "matchMode") === "amount_time_window"}>?????</option>
+                    <option value="remark_code" selected={stringConfig(provider.config, "matchMode") !== "amount_time_window"}>备注短码</option>
+                    <option value="amount_time_window" selected={stringConfig(provider.config, "matchMode") === "amount_time_window"}>金额时间窗</option>
                   </select>
                 </label>
               </div>
@@ -421,7 +421,7 @@ export function ProviderTable(props: { providers: ProviderConfigSummary[] }) {
           </form>
         ))}
       </div>
-      {props.providers.length === 0 ? <EmptyState title="??????" description="?? provider ????????" /> : null}
+      {props.providers.length === 0 ? <EmptyState title="暂无支付渠道" description="添加 provider 后会显示在这里。" /> : null}
     </Section>
   );
 }
